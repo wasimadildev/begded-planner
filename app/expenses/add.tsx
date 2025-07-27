@@ -2,15 +2,15 @@ import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { v4 as uuid } from 'uuid';
 import { useTransactions } from '../context/TransactionContext';
@@ -42,6 +42,10 @@ export default function AddExpenseScreen() {
       type,
       date: new Date().toLocaleDateString(),
     });
+    setTitle('');
+    setAmount('');
+    setType('expense');
+    setCategory('Food');
 
     // Show success feedback
     Alert.alert(

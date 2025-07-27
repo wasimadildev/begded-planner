@@ -2,19 +2,19 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    FlatList,
-    Platform,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Animated,
+  Dimensions,
+  FlatList,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useTransactions } from '../context/TransactionContext';
 
@@ -33,6 +33,7 @@ export default function ExpensesScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const filterAnimation = useRef(new Animated.Value(0)).current;
+  const [isScrolling, setIsScrolling] = useState(false);
 
   // Filtered and sorted transactions
   const processedTransactions = useMemo(() => {
@@ -129,6 +130,14 @@ export default function ExpensesScreen() {
     );
   };
 
+  const handleScrollBeginDrag = () => {
+    setIsScrolling(true);
+  };
+
+  const handleScrollEndDrag = () => {
+    setIsScrolling(false);
+  };
+
   const getCategoryEmoji = (category: string) => {
     const emojiMap: { [key: string]: string } = {
       'Food': '🍔', 'Transport': '🚗', 'Shopping': '🛒', 'Housing': '🏠',
@@ -174,16 +183,29 @@ export default function ExpensesScreen() {
   );
 
   const renderTransaction = ({ item, index }: { item: any, index: number }) => {
+    // Only apply scroll animations when actually scrolling
     const inputRange = [-1, 0, 50 * index, 50 * (index + 2)];
     
-    const scale = scrollY.interpolate({
+    const scale = isScrolling ? scrollY.interpolate({
       inputRange,
       outputRange: [1, 1, 1, 0.8],
       extrapolateLeft: 'clamp',
-    });
+    }) : new Animated.Value(1);
+
+    const opacity = isScrolling ? scrollY.interpolate({
+      inputRange,
+      outputRange: [1, 1, 1, 0.3],
+      extrapolateLeft: 'clamp',
+    }) : new Animated.Value(1);
 
     return (
-      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
+      <Animated.View style={[
+        styles.card, 
+        isScrolling && { 
+          transform: [{ scale }],
+          opacity: opacity
+        }
+      ]}>
         <View style={styles.cardHeader}>
           <View style={styles.categoryContainer}>
             <View style={[
@@ -237,6 +259,26 @@ export default function ExpensesScreen() {
 
   const ListHeader = () => (
     <View>
+      {/* Quick Action Buttons */}
+      <View style={styles.quickActionsContainer}>
+        <TouchableOpacity
+          style={styles.savingsButton}
+          onPress={() => router.push('/savings')} // Adjust the route as needed
+          activeOpacity={0.8}
+        >
+          <View style={styles.savingsButtonContent}>
+            <View style={styles.savingsIconContainer}>
+              <Text style={styles.savingsIcon}>🎯</Text>
+            </View>
+            <View style={styles.savingsTextContainer}>
+              <Text style={styles.savingsTitle}>Savings Goals</Text>
+              <Text style={styles.savingsSubtitle}>Track your progress</Text>
+            </View>
+          </View>
+          <Text style={styles.savingsArrow}>→</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Analytics Summary */}
       <View style={styles.analyticsContainer}>
         <View style={styles.analyticsCard}>
@@ -385,6 +427,9 @@ export default function ExpensesScreen() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onScrollEndDrag={handleScrollEndDrag}
+        onMomentumScrollEnd={handleScrollEndDrag}
         scrollEventThrottle={16}
       />
 
@@ -427,6 +472,66 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 100,
   },
+  
+  // NEW: Quick Actions Container and Savings Button Styles
+  quickActionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  savingsButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 8,
+  },
+  savingsButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  savingsIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  savingsIcon: {
+    fontSize: 20,
+  },
+  savingsTextContainer: {
+    flex: 1,
+  },
+  savingsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  savingsSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  savingsArrow: {
+    fontSize: 20,
+    color: '#6366F1',
+    fontWeight: '600',
+  },
+
   analyticsContainer: {
     padding: 20,
     gap: 16,
